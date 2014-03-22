@@ -101,6 +101,7 @@ class Verifier(NodeVisitor):
 	
 	def push(self, v):
 		self.stack.append(v)
+#		print "stack len %d\n" % len(self.stack)
 		
 	def pop(self):
 		if not len(self.stack):
@@ -151,6 +152,7 @@ class Verifier(NodeVisitor):
 		self.depth -= 1
 		
 		if self.depth == self.compound_depth:
+#			print("delete stack\n")
 			del self.stack[:]
 
 		return ret
@@ -169,6 +171,7 @@ class Verifier(NodeVisitor):
 		self.vars[name] = Variable(name, self.pop())
 		
 	def visit_Constant(self, node):
+#		node.show()
 		v = Value(node.type, int(node.value))
 		self.push(v)
 	
@@ -182,16 +185,23 @@ class Verifier(NodeVisitor):
 	
 	def visit_Cast(self, node):
 		self.visit(node.expr)
+		v = self.pop()
+		# TODO: validate type
+#		node.to_type.type.type.show()
+		v.type = node.to_type.type.type.names[0]
+		self.push(v)
 		
 	def visit_Assignment(self, node):
+#		node.show()
+
 		self.visit(node.lvalue)
 		self.visit(node.rvalue)
+
 		r = self.pop()
 		l = self.pop()
-		rv = r.value if isinstance(r, Variable) else r
-		
 		print(l, node.op, r)
-		
+
+		rv = r.value if isinstance(r, Variable) else r
 		if node.op == "=":
 			l.value = rv
 		else:
@@ -231,9 +241,16 @@ class Verifier(NodeVisitor):
 		result = self.ope(lv, node.op, rv)
 		self.push(result)
 	
-	def visit_Cast(self, node):
-		# TODO: 
-		return
+	def visit_TernaryOp(self, node):
+	
+#		node.show()
+
+		self.visit(node.cond)
+		cond = self.pop()
+		if cond.value:
+			self.visit(node.iftrue)
+		else:
+			self.visit(node.iffalse)
 	
 	def visit_Union(self, node):
 		# TODO: 
@@ -252,10 +269,6 @@ class Verifier(NodeVisitor):
 		return
 	
 	def visit_If(self, node):
-		# TODO: 
-		return
-	
-	def visit_TernaryOp(self, node):
 		# TODO: 
 		return
 	

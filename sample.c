@@ -10,6 +10,10 @@ int i = 1000;
 
 int func(int arg)
 {
+	int test;
+	test = 1 ? 10 : 1;
+	test = test + 2;
+	
 	printf("i = %d\n", i);
 	{
 		int i = 10;

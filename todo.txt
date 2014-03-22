@@ -1,3 +1,4 @@
+scope level (global variable = 0)
 
 unary op
 
@@ -11,23 +12,21 @@ conditional op
 
 C integer literal
 
+induce type of typedef
+
 type size check
 
 cast op
 
 arithmetic overflow check
 
-scope level (global variable = 0)
-
-induce type of typedef
-
 array
-
-struct
 
 pointer
 
 enum
+
+struct
 
 union
 
