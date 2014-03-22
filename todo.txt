@@ -1,0 +1,50 @@
+
+unary op
+
+relational op
+
+bitwise op
+
+logical op
+
+conditional op
+
+C integer literal
+
+type size check
+
+cast op
+
+arithmetic overflow check
+
+scope level (global variable = 0)
+
+induce type of typedef
+
+array
+
+struct
+
+pointer
+
+enum
+
+union
+
+if
+
+switch
+
+for
+
+while
+
+do while
+
+goto
+
+function call
+
+float
+
+
