@@ -19,118 +19,70 @@ class Variable:
 class Value:
 	def __init__(self, type, value = None):
 		self.type = type
-		self.upper = value
-		self.lower = value
+		self.value = value
 	
 	def __repr__(self):
-		return "%s [%s:%s]" % (self.type, self.lower, self.upper)
+		return "%s %s" % (self.type, self.value)
 	
 	def __pos__(self):
-		ret = Value(self.type)
-		ret.upper = self.upper
-		ret.lower = self.lower
+		ret = Value(self.type, self.value)
 		return ret
 	
 	def __neg__(self):
-		ret = Value(self.type)
-		ret.upper = -self.upper
-		ret.lower = -self.lower
+		ret = Value(self.type, -self.value)
 		return ret
 		
 	def __not__(self):
-		ret = Value(self.type)
-		ret.upper = not self.upper
-		ret.lower = not self.lower
+		ret = Value(self.type, not self.value)
 		return ret
 		
 	# interval arithmetic
 	def __add__(self, rhs):
-		ret = Value(self.type)
-		ret.upper = self.upper + rhs.upper
-		ret.lower = self.lower + rhs.lower
+		ret = Value(self.type, self.value + rhs.value)
 		return ret
 	
 	def __sub__(self, rhs):
-		ret = Value(self.type)
-		ret.upper = self.upper - rhs.lower
-		ret.lower = self.lower - rhs.upper
+		ret = Value(self.type, self.value - rhs.value)
 		return ret
 	
 	def __mul__(self, rhs):
-		ret = Value(self.type)
-		lu = self.upper
-		ll = self.lower
-		ru = rhs.upper
-		rl = rhs.lower
-		luru = lu * ru
-		lurl = lu * rl
-		llru = ll * ru
-		llrl = ll * rl
-		ret.upper = max(luru, lurl, llru, llrl)
-		ret.lower = min(luru, lurl, llru, llrl)
+		ret = Value(self.type, self.value * rhs.value)
 		return ret
 	
 	def __truediv__(self, rhs):
-		ret = Value(self.type)
-		lu = self.upper
-		ll = self.lower
-		ru = rhs.upper
-		rl = rhs.lower
-		luru = int(lu / ru)
-		lurl = int(lu / rl)
-		llru = int(ll / ru)
-		llrl = int(ll / rl)
-		ret.upper = max(luru, lurl, llru, llrl)
-		ret.lower = min(luru, lurl, llru, llrl)
+		ret = Value(self.type, int(self.value / rhs.value))
 		return ret
 	
 	def __mod__(self, rhs):
-		ret = Value(self.type)
-		lu = self.upper
-		ll = self.lower
-		ru = rhs.upper
-		rl = rhs.lower
-		luru = lu % ru
-		lurl = lu % rl
-		llru = ll % ru
-		llrl = ll % rl
-		ret.upper = max(luru, lurl, llru, llrl)
-		ret.lower = min(luru, lurl, llru, llrl)
+		ret = Value(self.type, self.value % rhs.value)
 		return ret
 	
 	def __eq__(self, rhs):
-		ret = Value(self.type)
-		ret.lower = ret.upper = (self.upper == rhs.upper)
+		ret = Value(self.type, self.value == rhs.value)
 		return ret
 	
 	def __ne__(self, rhs):
-		ret = Value(self.type)
-		ret.lower = ret.upper = (self.upper != rhs.upper)
+		ret = Value(self.type, self.value != rhs.value)
 		return ret
 	
 	def __lshift__(self, rhs):
-		ret = Value(self.type)
-		ret.lower = ret.upper = (self.upper << rhs.upper)
+		ret = Value(self.type, self.value << rhs.value)
 		return ret
 	
 	def __rshift__(self, rhs):
-		ret = Value(self.type)
-		ret.lower = ret.upper = (self.upper >> rhs.upper)
+		ret = Value(self.type, self.value >> rhs.value)
 		return ret
 		
 	def truth(self):
-		ret = Value(self.type)
-		ret.lower = ret.upper = (self.upper != 0)
+		ret = Value(self.type, self.value != 0)
 		return ret
 	
 	def increment(self):
-		self.upper += 1
-		self.lower += 1
+		self.value += 1
 		return self
 	
 	def decrement(self):
-		self.upper -= 1
-		self.lower -= 1
+		self.value -= 1
 		return self
 		
 	def addressof(self):
@@ -237,6 +189,9 @@ class Verifier(NodeVisitor):
 		r = self.pop()
 		l = self.pop()
 		rv = r.value if isinstance(r, Variable) else r
+		
+		print(l, node.op, r)
+		
 		if node.op == "=":
 			l.value = rv
 		else:
@@ -250,6 +205,9 @@ class Verifier(NodeVisitor):
 		v = self.pop()
 		vv = v.value if isinstance(v, Variable) else v
 		op = node.op
+		
+		print(op, vv)
+		
 		post = op[0] == "p"
 		op = op[-2:]
 		if op == "++":		self.push(vv.increment())
