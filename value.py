@@ -60,6 +60,22 @@ class Value:
 		ret = Value(self.type, self.value != 0)
 		return ret
 	
+	def __lt__(self, rhs):
+		ret = Value(self.type, self.value < rhs.value)
+		return ret
+	
+	def __le__(self, rhs):
+		ret = Value(self.type, self.value <= rhs.value)
+		return ret
+	
+	def __ge__(self, rhs):
+		ret = Value(self.type, self.value >= rhs.value)
+		return ret
+	
+	def __gt__(self, rhs):
+		ret = Value(self.type, self.value > rhs.value)
+		return ret
+	
 	def increment(self):
 		self.value += 1
 		return self
@@ -73,6 +89,8 @@ class Value:
 		
 	def indirection(self):
 		return
+		
+	
 
 class Variable:
 	def __init__(self, name, value = None):

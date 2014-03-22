@@ -187,9 +187,7 @@ class Verifier(NodeVisitor):
 		self.push(result)
 	
 	def visit_TernaryOp(self, node):
-	
 #		node.show()
-
 		self.visit(node.cond)
 		cond = self.pop()
 		if cond.value:
@@ -214,11 +212,16 @@ class Verifier(NodeVisitor):
 		return
 	
 	def visit_If(self, node):
-		# TODO: 
-		return
+#		node.show()
+		self.visit(node.cond)
+		cond = self.pop()
+		if cond.value:
+			self.visit(node.iftrue)
+		else:
+			self.visit(node.iffalse)
 	
 	def visit_Switch(self, node):
-		# TODO: 
+		node.show()
 		return
 	
 	def visit_For(self, node):

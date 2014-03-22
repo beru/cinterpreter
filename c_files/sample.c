@@ -11,8 +11,35 @@ int i = 1000;
 int func(int arg)
 {
 	int test;
-	test = 1 ? 10 : 1;
+	test = 1 ? 2 : 1;
 	test = test + 2;
+	
+	if (test < 5) {
+		test += 10;
+	}else {
+		test -= 10;
+	}
+	
+	switch (test) {
+	case 0:
+		printf("1");
+		break;
+	case 1:
+		printf("1");
+		break;
+	case 2:
+		printf("1");
+		break;
+	case 3:
+		printf("1");
+		break;
+	case 4:
+		printf("1");
+		break;
+	default:
+		printf("1");
+		break;
+	}
 	
 	printf("i = %d\n", i);
 	{
@@ -71,7 +98,6 @@ int func(int arg)
 	S8 c = 1000;
 	
 	c = a;
-	
 }
 
 int main(int argc, char* argv[])
