@@ -1,4 +1,6 @@
-scope level (global variable = 0)
+scope level
+
+global variable
 
 unary op
 

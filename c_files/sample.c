@@ -14,7 +14,6 @@ int func(int arg)
 	test = 1 ? 10 : 1;
 	test = test + 2;
 	
-	int i;
 	printf("i = %d\n", i);
 	{
 		int i = 10;
@@ -24,6 +23,9 @@ int func(int arg)
 		i = (2 == 2);
 		printf("i = %d\n", i);
 	}
+	int i;
+	++i;
+	printf("i = %d\n", i);
 	i = -i;
 	i = -i;
 	!i;

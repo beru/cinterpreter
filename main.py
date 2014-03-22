@@ -1,100 +1,20 @@
 #!/usr/bin/env python
 
 from __future__ import division
+
 import sys
+from value import *
+
 from pycparser import parse_file
 from pycparser.c_ast import *
 from pycparser.c_parser import CParser, Coord, ParseError
 from pycparser.c_lexer import CLexer
 
-parser = CParser()
-
-class Variable:
-	def __init__(self, name, value = None):
-		self.name = name
-		self.value = value
-	def __repr__(self):
-		return "%s %s" % (self.name, self.value)
-
-class Value:
-	def __init__(self, type, value = None):
-		self.type = type
-		self.value = value
-	
-	def __repr__(self):
-		return "%s %s" % (self.type, self.value)
-	
-	def __pos__(self):
-		ret = Value(self.type, self.value)
-		return ret
-	
-	def __neg__(self):
-		ret = Value(self.type, -self.value)
-		return ret
-		
-	def __not__(self):
-		ret = Value(self.type, not self.value)
-		return ret
-		
-	# interval arithmetic
-	def __add__(self, rhs):
-		ret = Value(self.type, self.value + rhs.value)
-		return ret
-	
-	def __sub__(self, rhs):
-		ret = Value(self.type, self.value - rhs.value)
-		return ret
-	
-	def __mul__(self, rhs):
-		ret = Value(self.type, self.value * rhs.value)
-		return ret
-	
-	def __truediv__(self, rhs):
-		ret = Value(self.type, int(self.value / rhs.value))
-		return ret
-	
-	def __mod__(self, rhs):
-		ret = Value(self.type, self.value % rhs.value)
-		return ret
-	
-	def __eq__(self, rhs):
-		ret = Value(self.type, self.value == rhs.value)
-		return ret
-	
-	def __ne__(self, rhs):
-		ret = Value(self.type, self.value != rhs.value)
-		return ret
-	
-	def __lshift__(self, rhs):
-		ret = Value(self.type, self.value << rhs.value)
-		return ret
-	
-	def __rshift__(self, rhs):
-		ret = Value(self.type, self.value >> rhs.value)
-		return ret
-		
-	def truth(self):
-		ret = Value(self.type, self.value != 0)
-		return ret
-	
-	def increment(self):
-		self.value += 1
-		return self
-	
-	def decrement(self):
-		self.value -= 1
-		return self
-		
-	def addressof(self):
-		return
-		
-	def indirection(self):
-		return
-	
 class Verifier(NodeVisitor):
 	
 	def __init__(self):
 		self.vars = {}
+		self.local_vars = []
 		self.stack = []
 		self.depth = 0
 		self.compound_depth = 0
@@ -159,16 +79,29 @@ class Verifier(NodeVisitor):
 	
 	def visit_Compound(self, node):
 		self.compound_depth += 1
+		print("compount begin\n")
+		self.local_vars.append([])
 		ret = self.generic_visit(node)
+		local_vars = self.local_vars.pop()
+		for name in local_vars:
+			print("%s pop\n" % name)
+			self.vars[name].pop()
+		print("compount end\n")
 		self.compound_depth -= 1
 	
 	def visit_Decl(self, node):
+		node.show()
+	
 		type = node.type
 		name = type.declname
 		typeName = type.type.names[0]
 		self.eval(node.init)
-#		print(name)
-		self.vars[name] = Variable(name, self.pop())
+		if name not in self.vars:
+			self.vars[name] = []
+		var = Variable(name, self.pop())
+		print("%s push\n" % name)
+		self.vars[name].append(var)
+		self.local_vars[-1].append(name)
 		
 	def visit_Constant(self, node):
 #		node.show()
@@ -177,11 +110,16 @@ class Verifier(NodeVisitor):
 	
 	def visit_ID(self, node):
 		name = node.name
-		if not name in self.vars:
+		if name not in self.vars:
 			print("at %s %s not found\n" % (node.coord, name))
 			sys.exit()
-		else:
-			self.push(self.vars[name])
+		lst = self.vars[name]
+		lstlen = len(lst)
+		if lstlen == 0:
+			print("var %s not found\n" % name)
+			sys.exit()
+		v = lst[-1]
+		self.push(v)
 	
 	def visit_Cast(self, node):
 		self.visit(node.expr)
@@ -213,7 +151,14 @@ class Verifier(NodeVisitor):
 	def visit_UnaryOp(self, node):
 		self.visit(node.expr)
 		v = self.pop()
-		vv = v.value if isinstance(v, Variable) else v
+		
+		if isinstance(v, Variable):
+			if v.value is None:
+				print("%s is not initialized\n" % v.name)
+				sys.exit()
+			vv = v.value
+		else:
+			vv = v
 		op = node.op
 		
 		print(op, vv)
@@ -312,7 +257,7 @@ class FuncDefVisitor(NodeVisitor):
         v = Verifier()
         v.visit(node.body)
 
-ast = parse_file('sample.c', use_cpp=True,
+ast = parse_file('./c_files/sample.c', use_cpp=True,
 	cpp_args=r'-I../pycparser-master/utils/fake_libc_include')
 #ast.show()
 
