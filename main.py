@@ -81,6 +81,11 @@ class Verifier(NodeVisitor):
 			del self.stack[:]
 		return
 	
+	def visit_FuncDef(self, node):
+		# TODO: process param_decls
+		self.visit(node.body)
+		return
+	
 	def visit_Compound(self, node):
 #		node.show()
 		items = node.block_items
@@ -342,11 +347,14 @@ class Verifier(NodeVisitor):
 		return
 	
 
-class FuncDefVisitor(NodeVisitor):
+class RootVisitor(NodeVisitor):
+	def __init__(self):
+		self.v = Verifier()
+	
 	def visit_Decl(self, node):
 		# TODO: register global variables
-		return
 		node.show()
+		return
 	
 	def visit_Typedef(self, node):
 		# TODO: register typedef
@@ -359,9 +367,8 @@ class FuncDefVisitor(NodeVisitor):
 	
 	def visit_FuncDef(self, node):
 #		print('%s at %s' % (node.decl.name, node.decl.coord))
-#		node.show()
-		v = Verifier()
-		v.visit(node.body)
+#		print node.show()
+		self.v.vars[node.decl.name] = [node]
 
 if len(sys.argv) < 2:
 	print("specify c file")
@@ -370,6 +377,16 @@ if len(sys.argv) < 2:
 ast = parse_file(sys.argv[1], use_cpp=True, cpp_args=r'-I../pycparser-master/utils/fake_libc_include')
 #ast.show()
 
-v = FuncDefVisitor()
+v = RootVisitor()
 v.visit(ast)
+
+if len(sys.argv) >= 3:
+	entry = sys.argv[2]
+else:
+	entry = "main"
+	
+if not entry in v.v.vars:
+	print("entry func %s not found" % entry)
+	sys.exit()
+v.v.visit(v.v.vars[entry][0])
 

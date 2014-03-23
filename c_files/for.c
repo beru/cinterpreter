@@ -5,24 +5,20 @@ int g_a;
 int g_arr[2] = {1, 2};
 int* g_p;
 
-typedef struct B
+int hoge(int i)
 {
-	int a;
-} B;
-
-struct A
-{
-	B b;
-	int a;
-};
-
-struct A a;
-
-int hoge() { return 0; }
+	int i = 0;
+	printf("%d\n", i);
+	return 0;
+}
 
 int main(int argc, char* argv[])
 {
+	printf("%p\n", main);
 	int hoge;
+	int main = 0;
+	main = 1000;
+	printf("%d\n", main);
 	for (int i=0; i<5; ++i) {
 		if (i == 2) {
 			hoge = 10;
