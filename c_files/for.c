@@ -1,9 +1,9 @@
 
 #include <stdio.h>
 
-int g_a;
-int g_arr[2] = {1, 2};
-int* g_p;
+int g_a = 20;
+//int g_arr[2] = {1, 2};
+//int* g_p;
 
 int hoge(int i)
 {
@@ -15,6 +15,7 @@ int hoge(int i)
 int main(int argc, char* argv[])
 {
 	printf("%p\n", main);
+	printf("%d\n", g_a);
 	int hoge;
 	int main = 0;
 	main = 1000;

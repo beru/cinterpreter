@@ -14,8 +14,8 @@ class Verifier(NodeVisitor):
 	
 	def __init__(self):
 		self.vars = {}
-		self.local_vars = []
-		self.stack = []
+		self.vars_stack = []
+		self.eval_stack = []
 		self.depth = 0
 		self.compound_depth = 0
 		self.break_flag = False
@@ -23,13 +23,13 @@ class Verifier(NodeVisitor):
 		self.return_flag = False
 	
 	def push(self, v):
-		self.stack.append(v)
-#		print "stack len %d\n" % len(self.stack)
+		self.eval_stack.append(v)
+#		print "eval_stack len %d\n" % len(self.eval_stack)
 		
 	def pop(self):
-		if not len(self.stack):
+		if not len(self.eval_stack):
 			return None
-		return self.stack.pop()
+		return self.eval_stack.pop()
 		
 	def eval(self, node):
 		if not node:
@@ -77,8 +77,8 @@ class Verifier(NodeVisitor):
 		ret = super(Verifier, self).visit(node)
 		self.depth -= 1
 		if self.depth == self.compound_depth:
-#			print("delete stack")
-			del self.stack[:]
+#			print("delete eval_stack")
+			del self.eval_stack[:]
 		return
 	
 	def visit_FuncDef(self, node):
@@ -92,7 +92,7 @@ class Verifier(NodeVisitor):
 		if items is None:
 			return
 		self.compound_depth += 1
-		self.local_vars.append([])
+		self.vars_stack.append([])
 		for item in items:
 			self.visit(item)
 			if self.break_flag or self.return_flag:
@@ -101,7 +101,7 @@ class Verifier(NodeVisitor):
 				if hasattr(node, 'parent_node_is_loop'):
 					self.continue_flag = False
 				break
-		local_vars = self.local_vars.pop()
+		local_vars = self.vars_stack.pop()
 		for name in local_vars:
 			print("%s pop" % name)
 			self.vars[name].pop()
@@ -119,7 +119,7 @@ class Verifier(NodeVisitor):
 		var = Variable(name, self.pop())
 		print("%s push" % name)
 		self.vars[name].append(var)
-		self.local_vars[-1].append(name)
+		self.vars_stack[-1].append(name)
 		
 	def visit_Constant(self, node):
 #		node.show()
@@ -350,20 +350,20 @@ class Verifier(NodeVisitor):
 class RootVisitor(NodeVisitor):
 	def __init__(self):
 		self.v = Verifier()
+		self.v.vars_stack.append([])
 	
 	def visit_Decl(self, node):
-		# TODO: register global variables
-		node.show()
+		self.v.visit(node);
 		return
 	
 	def visit_Typedef(self, node):
 		# TODO: register typedef
 		return
-		node.show()
+#		node.show()
 	
 	def visit_Struct(self, node):
 		return
-		node.show()
+#		node.show()
 	
 	def visit_FuncDef(self, node):
 #		print('%s at %s' % (node.decl.name, node.decl.coord))
