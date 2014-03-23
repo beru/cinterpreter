@@ -19,6 +19,7 @@ class Verifier(NodeVisitor):
 		self.depth = 0
 		self.compound_depth = 0
 		self.break_flag = False
+		self.continue_flag = False
 	
 	def push(self, v):
 		self.stack.append(v)
@@ -68,26 +69,36 @@ class Verifier(NodeVisitor):
 			print "op %s not supported\n" % op
 	
 	def visit(self, node):
+		if node is None:
+			return
+		
 		self.depth += 1
 		ret = super(Verifier, self).visit(node)
 		self.depth -= 1
-		
 		if self.depth == self.compound_depth:
 #			print("delete stack\n")
 			del self.stack[:]
-
-		return ret
+		return
 	
 	def visit_Compound(self, node):
+#		node.show()
+		items = node.block_items
+		if items is None:
+			return
 		self.compound_depth += 1
-		print("compount begin\n")
 		self.local_vars.append([])
-		ret = self.generic_visit(node)
+		for item in items:
+			self.visit(item)
+			if self.break_flag:
+				break
+			if self.continue_flag:
+				if hasattr(node, 'parent_node_is_loop'):
+					self.continue_flag = False
+				break
 		local_vars = self.local_vars.pop()
 		for name in local_vars:
 			print("%s pop\n" % name)
 			self.vars[name].pop()
-		print("compount end\n")
 		self.compound_depth -= 1
 	
 	def visit_Decl(self, node):
@@ -213,7 +224,6 @@ class Verifier(NodeVisitor):
 		return
 	
 	def visit_If(self, node):
-#		node.show()
 		self.visit(node.cond)
 		cond = self.pop()
 		if cond.value:
@@ -260,17 +270,48 @@ class Verifier(NodeVisitor):
 #		node.show()
 		self.break_flag = True
 	
+	def visit_Continue(self, node):
+#		node.show()
+		self.continue_flag = True
+	
 	def visit_For(self, node):
-		# TODO: 
-		return
+		self.visit(node.init)
+		node.stmt.parent_node_is_loop = True
+		while True:
+			self.visit(node.cond)
+			cond = self.pop()
+			if not cond.value:
+				break
+#			node.stmt.show()
+			self.visit(node.stmt)
+			if self.break_flag:
+				self.break_flag = False
+				break
+			self.visit(node.next)
 	
 	def visit_While(self, node):
-		# TODO: 
-		return
+		node.stmt.parent_node_is_loop = True
+		while True:
+			self.visit(node.cond)
+			cond = self.pop()
+			if not cond.value:
+				break
+			self.visit(node.stmt)
+			if self.break_flag:
+				self.break_flag = False
+				break
 	
 	def visit_DoWhile(self, node):
-		# TODO: 
-		return
+		node.stmt.parent_node_is_loop = True
+		while True:
+			self.visit(node.stmt)
+			if self.break_flag:
+				self.break_flag = False
+				break
+			self.visit(node.cond)
+			cond = self.pop()
+			if not cond.value:
+				break
 	
 	def visit_Return(self, node):
 		# TODO: 
@@ -297,7 +338,7 @@ class FuncDefVisitor(NodeVisitor):
         v = Verifier()
         v.visit(node.body)
 
-ast = parse_file('./c_files/sample.c', use_cpp=True,
+ast = parse_file(sys.argv[1], use_cpp=True,
 	cpp_args=r'-I../pycparser-master/utils/fake_libc_include')
 #ast.show()
 
