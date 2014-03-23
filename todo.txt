@@ -1,3 +1,4 @@
+
 scope level
 
 global variable
@@ -22,16 +23,6 @@ cast op
 
 arithmetic overflow check
 
-array
-
-pointer
-
-enum
-
-struct
-
-union
-
 if
 
 switch
@@ -44,8 +35,21 @@ do while
 
 goto
 
+return
+
 function call
 
 float
 
+array
+
+pointer
+
+enum
+
+struct
+
+union
+
+const
 

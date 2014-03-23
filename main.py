@@ -18,6 +18,7 @@ class Verifier(NodeVisitor):
 		self.stack = []
 		self.depth = 0
 		self.compound_depth = 0
+		self.break_flag = False
 	
 	def push(self, v):
 		self.stack.append(v)
@@ -221,8 +222,43 @@ class Verifier(NodeVisitor):
 			self.visit(node.iffalse)
 	
 	def visit_Switch(self, node):
-		node.show()
-		return
+#		node.show()
+		self.visit(node.cond)
+		cond = self.pop()
+		cond = cond.value if isinstance(cond, Variable) else cond
+		matched = False
+		default = None
+		for item in node.stmt.block_items:
+			if isinstance(item, Default):
+				default = item
+				continue
+			elif isinstance(item, Case):
+				self.visit(item.expr)
+				expr = self.pop()
+				if not matched and  not (cond == expr).value:
+					continue
+				matched = True
+				for stmt in item.stmts:
+					self.visit(stmt)
+					if self.break_flag:
+						break
+				if self.break_flag:
+					self.break_flag = False
+					break
+			else:
+				print("illegal block item in switch\n")
+				sys.exit()
+		if matched or default is None:
+			return
+		for item in default.stmts:
+			self.visit(item)
+			if self.break_flag:
+				self.break_flag = False
+				break
+		
+	def visit_Break(self, node):
+#		node.show()
+		self.break_flag = True
 	
 	def visit_For(self, node):
 		# TODO: 
@@ -249,7 +285,8 @@ class Verifier(NodeVisitor):
 		return
 	
 	def visit_FuncCall(self, node):
-		# TODO: 
+		# TODO:
+		node.show() 
 		return
 	
 	

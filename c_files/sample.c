@@ -19,25 +19,28 @@ int func(int arg)
 	}else {
 		test -= 10;
 	}
-	
+	test = 0;
 	switch (test) {
 	case 0:
-		printf("1");
-		break;
+		if (test < 9) {
+			printf("00");
+		}else {
+			printf("01");
+		}
+		printf("0 end");
 	case 1:
 		printf("1");
-		break;
 	case 2:
-		printf("1");
+		printf("2");
 		break;
 	case 3:
-		printf("1");
+		printf("3");
 		break;
 	case 4:
-		printf("1");
+		printf("4");
 		break;
 	default:
-		printf("1");
+		printf("default");
 		break;
 	}
 	
