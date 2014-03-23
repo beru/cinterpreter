@@ -24,11 +24,13 @@ class Verifier(NodeVisitor):
 	
 	def push(self, v):
 		self.eval_stack.append(v)
-#		print "eval_stack len %d\n" % len(self.eval_stack)
+#		print "eval_stack pushed %s" % v
+#		print "eval_stack len %d" % len(self.eval_stack)
 		
 	def pop(self):
 		if not len(self.eval_stack):
 			return None
+#		print "eval_stack popped"
 		return self.eval_stack.pop()
 		
 	def eval(self, node):
@@ -72,7 +74,7 @@ class Verifier(NodeVisitor):
 	def visit(self, node):
 		if node is None:
 			return
-		
+#		node.show()
 		self.depth += 1
 		ret = super(Verifier, self).visit(node)
 		self.depth -= 1
@@ -82,7 +84,24 @@ class Verifier(NodeVisitor):
 		return
 	
 	def visit_FuncDef(self, node):
-		# TODO: process param_decls
+		params = node.decl.type.args.params
+		arg_values = []
+		if len(self.eval_stack) < len(params):
+			print("not enough arguments pushed on stack")
+			sys.exit()
+		for i in range(len(params)):
+			arg_values.append(self.pop())
+#		print("arg_values", arg_values)
+		for param in params:
+			self.visit(param)
+			l = self.vars[param.name][-1]
+			if l is None:
+				print("None")
+				sys.exit()
+			r = arg_values.pop()
+			rv = r.value if isinstance(r, Variable) else r
+			l.value = rv
+			
 		self.visit(node.body)
 		return
 	
@@ -116,7 +135,9 @@ class Verifier(NodeVisitor):
 		self.eval(node.init)
 		if name not in self.vars:
 			self.vars[name] = []
-		var = Variable(name, self.pop())
+		var = self.pop()
+		var = var.value if isinstance(var, Variable) else var
+		var = Variable(name, var)
 		print("%s push" % name)
 		self.vars[name].append(var)
 		self.vars_stack[-1].append(name)
@@ -149,14 +170,12 @@ class Verifier(NodeVisitor):
 		
 	def visit_Assignment(self, node):
 #		node.show()
-
 		self.visit(node.lvalue)
 		self.visit(node.rvalue)
 
 		r = self.pop()
 		l = self.pop()
-		print(l, node.op, r)
-
+		print("assign", l, node.op, r)
 		rv = r.value if isinstance(r, Variable) else r
 		if node.op == "=":
 			l.value = rv
@@ -342,9 +361,11 @@ class Verifier(NodeVisitor):
 		return
 	
 	def visit_FuncCall(self, node):
-		# TODO:
-		node.show() 
-		return
+		node.show()
+		self.visit(node.name)
+		func = self.pop()
+		self.visit(node.args)
+		self.visit(func)
 	
 
 class RootVisitor(NodeVisitor):
@@ -388,5 +409,7 @@ else:
 if not entry in v.v.vars:
 	print("entry func %s not found" % entry)
 	sys.exit()
+v.v.push(Value("int", 99));
+v.v.push(Value("int", 50));
 v.v.visit(v.v.vars[entry][0])
 

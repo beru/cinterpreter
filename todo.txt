@@ -13,16 +13,6 @@ logical op
 
 conditional op
 
-C integer literal
-
-induce type of typedef
-
-type size check
-
-cast op
-
-arithmetic overflow check
-
 if
 
 switch
@@ -33,23 +23,39 @@ while
 
 do while
 
-goto
-
 return
 
 function call
 
-float
+C integer literal
+
+type size check
+
+cast op
+
+arithmetic overflow check
+
+struct
 
 array
 
 pointer
 
-enum
+typedef
 
-struct
+goto
+
+label
+
+enum
 
 union
 
-const
+float
+
+qualifiers
+	const
+	static
+	inline
+	volatile
 

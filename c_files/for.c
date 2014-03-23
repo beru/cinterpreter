@@ -1,14 +1,26 @@
 
 #include <stdio.h>
 
-int g_a = 20;
+int g_a = 95;
 //int g_arr[2] = {1, 2};
 //int* g_p;
 
-int hoge(int i)
+int hoge2(int arg0)
 {
-	int i = 0;
-	printf("%d\n", i);
+	int test = arg0;
+	for (int i=test - 5; i<test; ++i) {
+		;
+	}
+}
+
+int hoge(int arg0, int arg1)
+{
+	int test = arg0;
+//	printf("%d\n", i);
+	for (int i=g_a; i<test; ++i) {
+		hoge2(i);
+	}
+	
 	return 0;
 }
 
