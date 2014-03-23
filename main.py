@@ -20,6 +20,7 @@ class Verifier(NodeVisitor):
 		self.compound_depth = 0
 		self.break_flag = False
 		self.continue_flag = False
+		self.return_flag = False
 	
 	def push(self, v):
 		self.stack.append(v)
@@ -40,11 +41,11 @@ class Verifier(NodeVisitor):
 		print(lhs, op, rhs)
 		
 		if lhs is None:
-			print("lhs None\n")
+			print("lhs None")
 			sys.exit()
 		
 		if rhs is None:
-			print("rhs None\n")
+			print("rhs None")
 			sys.exit()
 		
 		if op == '+':			return lhs + rhs
@@ -66,7 +67,7 @@ class Verifier(NodeVisitor):
 		elif op == ">":			return lhs > rhs
 		elif op == ">=":		return lhs >= rhs
 		else:
-			print "op %s not supported\n" % op
+			print "op %s not supported" % op
 	
 	def visit(self, node):
 		if node is None:
@@ -76,7 +77,7 @@ class Verifier(NodeVisitor):
 		ret = super(Verifier, self).visit(node)
 		self.depth -= 1
 		if self.depth == self.compound_depth:
-#			print("delete stack\n")
+#			print("delete stack")
 			del self.stack[:]
 		return
 	
@@ -89,7 +90,7 @@ class Verifier(NodeVisitor):
 		self.local_vars.append([])
 		for item in items:
 			self.visit(item)
-			if self.break_flag:
+			if self.break_flag or self.return_flag:
 				break
 			if self.continue_flag:
 				if hasattr(node, 'parent_node_is_loop'):
@@ -97,7 +98,7 @@ class Verifier(NodeVisitor):
 				break
 		local_vars = self.local_vars.pop()
 		for name in local_vars:
-			print("%s pop\n" % name)
+			print("%s pop" % name)
 			self.vars[name].pop()
 		self.compound_depth -= 1
 	
@@ -111,7 +112,7 @@ class Verifier(NodeVisitor):
 		if name not in self.vars:
 			self.vars[name] = []
 		var = Variable(name, self.pop())
-		print("%s push\n" % name)
+		print("%s push" % name)
 		self.vars[name].append(var)
 		self.local_vars[-1].append(name)
 		
@@ -123,12 +124,12 @@ class Verifier(NodeVisitor):
 	def visit_ID(self, node):
 		name = node.name
 		if name not in self.vars:
-			print("at %s %s not found\n" % (node.coord, name))
+			print("at %s %s not found" % (node.coord, name))
 			sys.exit()
 		lst = self.vars[name]
 		lstlen = len(lst)
 		if lstlen == 0:
-			print("var %s not found\n" % name)
+			print("var %s not found" % name)
 			sys.exit()
 		v = lst[-1]
 		self.push(v)
@@ -166,7 +167,7 @@ class Verifier(NodeVisitor):
 		
 		if isinstance(v, Variable):
 			if v.value is None:
-				print("%s is not initialized\n" % v.name)
+				print("%s is not initialized" % v.name)
 				sys.exit()
 			vv = v.value
 		else:
@@ -255,8 +256,10 @@ class Verifier(NodeVisitor):
 				if self.break_flag:
 					self.break_flag = False
 					break
+				elif self.return_flag:
+					break
 			else:
-				print("illegal block item in switch\n")
+				print("illegal block item in switch")
 				sys.exit()
 		if matched or default is None:
 			return
@@ -265,7 +268,9 @@ class Verifier(NodeVisitor):
 			if self.break_flag:
 				self.break_flag = False
 				break
-		
+			elif self.return_flag:
+				break
+
 	def visit_Break(self, node):
 #		node.show()
 		self.break_flag = True
@@ -287,6 +292,8 @@ class Verifier(NodeVisitor):
 			if self.break_flag:
 				self.break_flag = False
 				break
+			elif self.return_flag:
+				break
 			self.visit(node.next)
 	
 	def visit_While(self, node):
@@ -300,6 +307,8 @@ class Verifier(NodeVisitor):
 			if self.break_flag:
 				self.break_flag = False
 				break
+			elif self.return_flag:
+				break
 	
 	def visit_DoWhile(self, node):
 		node.stmt.parent_node_is_loop = True
@@ -308,13 +317,15 @@ class Verifier(NodeVisitor):
 			if self.break_flag:
 				self.break_flag = False
 				break
+			elif self.return_flag:
+				break
 			self.visit(node.cond)
 			cond = self.pop()
 			if not cond.value:
 				break
 	
 	def visit_Return(self, node):
-		# TODO: 
+		self.return_flag = True
 		return
 	
 	def visit_Goto(self, node):
@@ -330,16 +341,33 @@ class Verifier(NodeVisitor):
 		node.show() 
 		return
 	
-	
-class FuncDefVisitor(NodeVisitor):
-    def visit_FuncDef(self, node):
-#        print('%s at %s' % (node.decl.name, node.decl.coord))
-#        node.show()
-        v = Verifier()
-        v.visit(node.body)
 
-ast = parse_file(sys.argv[1], use_cpp=True,
-	cpp_args=r'-I../pycparser-master/utils/fake_libc_include')
+class FuncDefVisitor(NodeVisitor):
+	def visit_Decl(self, node):
+		# TODO: register global variables
+		return
+		node.show()
+	
+	def visit_Typedef(self, node):
+		# TODO: register typedef
+		return
+		node.show()
+	
+	def visit_Struct(self, node):
+		return
+		node.show()
+	
+	def visit_FuncDef(self, node):
+#		print('%s at %s' % (node.decl.name, node.decl.coord))
+#		node.show()
+		v = Verifier()
+		v.visit(node.body)
+
+if len(sys.argv) < 2:
+	print("specify c file")
+	sys.exit()
+	
+ast = parse_file(sys.argv[1], use_cpp=True, cpp_args=r'-I../pycparser-master/utils/fake_libc_include')
 #ast.show()
 
 v = FuncDefVisitor()
