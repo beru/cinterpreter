@@ -3,6 +3,12 @@
 from __future__ import division
 
 import sys
+
+# This is not required if you've installed pycparser into
+# your site-packages/ with setup.py
+#
+sys.path.extend(['.', 'pycparser'])
+
 from value import *
 
 from pycparser import parse_file
@@ -130,8 +136,8 @@ class Verifier(NodeVisitor):
 		node.show()
 	
 		type = node.type
-		name = type.declname
-		typeName = type.type.names[0]
+		name = node.name #type.declname
+#		typeName = type.type.names[0]
 		self.eval(node.init)
 		if name not in self.vars:
 			self.vars[name] = []
@@ -395,7 +401,12 @@ if len(sys.argv) < 2:
 	print("specify c file")
 	sys.exit()
 	
-ast = parse_file(sys.argv[1], use_cpp=True, cpp_args=r'-I../pycparser-master/utils/fake_libc_include')
+ast = parse_file(
+    sys.argv[1],
+    use_cpp=True,
+    cpp_path=r'./pycparser/utils/cpp.exe',
+    cpp_args=r'-I./pycparser/utils/fake_libc_include'
+    )
 #ast.show()
 
 v = RootVisitor()
