@@ -1,0 +1,12 @@
+{
+	"file" : "c_files/for.c",
+	"function" : "hoge2",
+	"args" : [
+		1
+	],
+	"vars" : {
+		"g_a" : [0, 1],
+		"g_b" : [0, 1]
+	}
+}
+

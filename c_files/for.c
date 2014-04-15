@@ -1,17 +1,17 @@
 
 #include <stdio.h>
 
-int g_a = 95;
-//int g_arr[2] = {1, 2};
-//int* g_p;
+int g_a;
+int g_b;
 
 int hoge2(int arg0)
 {
-	int test = arg0;
+	int test = arg0 + g_a;
 	int test2 = 0;
 	for (int i=test - 5; i<test; ++i) {
 		test2 += i;
 	}
+	
 }
 
 int hoge(int arg0, int arg1)

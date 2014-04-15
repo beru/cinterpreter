@@ -4,12 +4,14 @@ from __future__ import division
 
 import sys
 import copy
+import json
 
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py
 #
 sys.path.extend(['.', 'pycparser'])
 
+from collections import OrderedDict
 from value import *
 
 from pycparser import parse_file
@@ -17,11 +19,11 @@ from pycparser.c_ast import *
 from pycparser.c_parser import CParser, Coord, ParseError
 from pycparser.c_lexer import CLexer
 
-class Verifier(NodeVisitor):
+class Interpreter(NodeVisitor):
 	
 	def __init__(self):
 		self.vars = {}
-		self.vars_stack = []
+		self.vars_stack = [[]]
 		self.eval_stack = []
 		self.depth = 0
 		self.compound_depth = 0
@@ -29,7 +31,7 @@ class Verifier(NodeVisitor):
 		self.continue_flag = False
 		self.return_flag = False
 		
-		self.records = {}
+		self.records = OrderedDict()
 	
 	def push(self, v):
 		self.eval_stack.append(v)
@@ -79,24 +81,24 @@ class Verifier(NodeVisitor):
 			sys.exit()
 		
 		ret = None
-		if op == '+':			ret = lhs + rhs
-		elif op == "-":			ret = lhs - rhs
-		elif op == "*":			ret = lhs * rhs
-		elif op == "/":			ret = lhs / rhs
-		elif op == "%":			ret = lhs % rhs
-		elif op == "^":			ret = lhs ^ rhs
-		elif op == "|":			ret = lhs | rhs
-		elif op == "&":			ret = lhs & rhs
-		elif op == "==":		ret = lhs == rhs
-		elif op == "!=":		ret = lhs != rhs
-		elif op == "<<":		ret = lhs << rhs
-		elif op == ">>":		ret = lhs >> rhs
-		elif op == "&&":		ret = lhs and rhs
-		elif op == "||":		ret = lhs or rhs
-		elif op == "<":			ret = lhs < rhs
-		elif op == "<=":		ret = lhs <= rhs
-		elif op == ">":			ret = lhs > rhs
-		elif op == ">=":		ret = lhs >= rhs
+		if op == '+':		ret = lhs + rhs
+		elif op == "-":		ret = lhs - rhs
+		elif op == "*":		ret = lhs * rhs
+		elif op == "/":		ret = lhs / rhs
+		elif op == "%":		ret = lhs % rhs
+		elif op == "^":		ret = lhs ^ rhs
+		elif op == "|":		ret = lhs | rhs
+		elif op == "&":		ret = lhs & rhs
+		elif op == "==":	ret = lhs == rhs
+		elif op == "!=":	ret = lhs != rhs
+		elif op == "<<":	ret = lhs << rhs
+		elif op == ">>":	ret = lhs >> rhs
+		elif op == "&&":	ret = lhs and rhs
+		elif op == "||":	ret = lhs or rhs
+		elif op == "<":		ret = lhs < rhs
+		elif op == "<=":	ret = lhs <= rhs
+		elif op == ">":		ret = lhs > rhs
+		elif op == ">=":	ret = lhs >= rhs
 		else:
 			print "op %s not supported" % op
 		return ret
@@ -106,7 +108,7 @@ class Verifier(NodeVisitor):
 			return
 #		node.show()
 		self.depth += 1
-		ret = super(Verifier, self).visit(node)
+		ret = super(Interpreter, self).visit(node)
 		self.depth -= 1
 		if self.depth == self.compound_depth:
 #			print("delete eval_stack")
@@ -402,11 +404,17 @@ class Verifier(NodeVisitor):
 		self.visit(node.args)
 		self.visit(func)
 	
+	def callFunction(self, name, args):
+		if not name in self.vars:
+			return False
+		for arg in args:
+			self.push(Value("int", int(arg)));
+		self.visit(self.vars[name][0])
+	
 
 class RootVisitor(NodeVisitor):
 	def __init__(self):
-		self.v = Verifier()
-		self.v.vars_stack.append([])
+		self.v = Interpreter()
 	
 	def visit_Decl(self, node):
 		self.v.visit(node);
@@ -425,32 +433,71 @@ class RootVisitor(NodeVisitor):
 #		print('%s at %s' % (node.decl.name, node.decl.coord))
 #		print node.show()
 		self.v.vars[node.decl.name] = [node]
+	
+	def callFunction(self, name, args):
+		return self.v.callFunction(name, args)
+		
+	def setVariable(self, name, value):
+		self.v.vars[name][0].value = Value("int", value)
+
+def run(ast, setting):
+	entry = setting["function"]
+	args = setting["args"]
+	vars = setting["vars"]
+	var_names = vars.keys()
+	var_ranges = vars.values()
+	nvars = len(var_names)
+
+	counters = []
+	for r in var_ranges:
+		counters.append(r[0])
+
+	while True:
+		
+		# setup root
+		v = RootVisitor()
+		v.visit(ast)
+		
+		# set variables
+		for i in range(nvars):
+			v.setVariable(var_names[i], counters[i])
+		
+		# call function
+		if v.callFunction(entry, args) == False:
+			print("func %s not found" % entry)
+		else:
+			# print variables
+			print ""
+			for key, value in v.v.records.items():
+				print key.name, value["min"], value["max"]
+		
+		# update counter
+		counters[0] += 1
+		for i in range(nvars):
+			if counters[i] > var_ranges[i][1]: # if exceeds max
+				if i+1 >= nvars:
+					return
+				counters[i] = var_ranges[i][0] # init to min
+				counters[i+1] += 1 # increment upper-level counter
+			else:
+				break
+	
 
 if len(sys.argv) < 2:
-	print("specify c file")
+	print("specify setting file")
 	sys.exit()
-	
+
+f = open(sys.argv[1])
+setting = json.load(f)
+f.close()
+
 ast = parse_file(
-    sys.argv[1],
+    setting["file"],
     use_cpp=True,
     cpp_path=r'./pycparser/utils/cpp.exe',
     cpp_args=r'-I./pycparser/utils/fake_libc_include'
     )
 #ast.show()
 
-v = RootVisitor()
-v.visit(ast)
+run(ast, setting)
 
-if len(sys.argv) >= 3:
-	entry = sys.argv[2]
-else:
-	entry = "main"
-	
-if not entry in v.v.vars:
-	print("entry func %s not found" % entry)
-	sys.exit()
-for i in range(3,len(sys.argv)):
-	v.v.push(Value("int", int(sys.argv[i])));
-v.v.visit(v.v.vars[entry][0])
-
-print v.v.records
