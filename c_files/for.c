@@ -8,16 +8,15 @@ int g_a = 95;
 int hoge2(int arg0)
 {
 	int test = arg0;
+	int test2 = 0;
 	for (int i=test - 5; i<test; ++i) {
-		;
+		test2 += i;
 	}
 }
 
 int hoge(int arg0, int arg1)
 {
-	int test = arg0;
-//	printf("%d\n", i);
-	for (int i=g_a; i<test; ++i) {
+	for (int i=arg0; i<arg1; ++i) {
 		hoge2(i);
 	}
 	

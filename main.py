@@ -3,6 +3,7 @@
 from __future__ import division
 
 import sys
+import copy
 
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py
@@ -27,6 +28,8 @@ class Verifier(NodeVisitor):
 		self.break_flag = False
 		self.continue_flag = False
 		self.return_flag = False
+		
+		self.records = {}
 	
 	def push(self, v):
 		self.eval_stack.append(v)
@@ -38,7 +41,26 @@ class Verifier(NodeVisitor):
 			return None
 #		print "eval_stack popped"
 		return self.eval_stack.pop()
-		
+	
+	def log(self, node, var, val):
+		key = var
+		coord = node.coord
+		if not key in self.records:
+			self.records[key] = {
+				"min" : val,
+				"max" : val,
+				"min_coord" : coord,
+				"max_coord" : coord
+			}
+		else:
+			rec = self.records[key]
+			if val < rec["min"]:
+				rec["min"] = val
+				rec["min_coord"] = coord
+			elif val > rec["max"]:
+				rec["max"] = val
+				rec["max_coord"] = coord
+	
 	def eval(self, node):
 		if not node:
 			return None
@@ -56,27 +78,29 @@ class Verifier(NodeVisitor):
 			print("rhs None")
 			sys.exit()
 		
-		if op == '+':			return lhs + rhs
-		elif op == "-":			return lhs - rhs
-		elif op == "*":			return lhs * rhs
-		elif op == "/":			return lhs / rhs
-		elif op == "%":			return lhs % rhs
-		elif op == "^":			return lhs ^ rhs
-		elif op == "|":			return lhs | rhs
-		elif op == "&":			return lhs & rhs
-		elif op == "==":		return lhs == rhs
-		elif op == "!=":		return lhs != rhs
-		elif op == "<<":		return lhs << rhs
-		elif op == ">>":		return lhs >> rhs
-		elif op == "&&":		return lhs and rhs
-		elif op == "||":		return lhs or rhs
-		elif op == "<":			return lhs < rhs
-		elif op == "<=":		return lhs <= rhs
-		elif op == ">":			return lhs > rhs
-		elif op == ">=":		return lhs >= rhs
+		ret = None
+		if op == '+':			ret = lhs + rhs
+		elif op == "-":			ret = lhs - rhs
+		elif op == "*":			ret = lhs * rhs
+		elif op == "/":			ret = lhs / rhs
+		elif op == "%":			ret = lhs % rhs
+		elif op == "^":			ret = lhs ^ rhs
+		elif op == "|":			ret = lhs | rhs
+		elif op == "&":			ret = lhs & rhs
+		elif op == "==":		ret = lhs == rhs
+		elif op == "!=":		ret = lhs != rhs
+		elif op == "<<":		ret = lhs << rhs
+		elif op == ">>":		ret = lhs >> rhs
+		elif op == "&&":		ret = lhs and rhs
+		elif op == "||":		ret = lhs or rhs
+		elif op == "<":			ret = lhs < rhs
+		elif op == "<=":		ret = lhs <= rhs
+		elif op == ">":			ret = lhs > rhs
+		elif op == ">=":		ret = lhs >= rhs
 		else:
 			print "op %s not supported" % op
-	
+		return ret
+		
 	def visit(self, node):
 		if node is None:
 			return
@@ -143,7 +167,9 @@ class Verifier(NodeVisitor):
 			self.vars[name] = []
 		var = self.pop()
 		var = var.value if isinstance(var, Variable) else var
-		var = Variable(name, var)
+		var = Variable(name, node.coord, var)
+		if var.value is not None:
+			self.log(node, var, var.value.value)
 		print("%s push" % name)
 		self.vars[name].append(var)
 		self.vars_stack[-1].append(name)
@@ -183,41 +209,44 @@ class Verifier(NodeVisitor):
 		l = self.pop()
 		print("assign", l, node.op, r)
 		rv = r.value if isinstance(r, Variable) else r
-		if node.op == "=":
-			l.value = rv
-		else:
+		if node.op != "=":
 			lv = l.value if isinstance(l, Variable) else l
-			op = node.op[:-1]
-			result = self.ope(lv, op, rv) # remove tail =
-			l.value = result
+			op = node.op[:-1] # remove tail =
+			rv = self.ope(lv, op, rv)
+		l.value = rv
+		self.log(node, l, rv.value)
 	
 	def visit_UnaryOp(self, node):
 		self.visit(node.expr)
-		v = self.pop()
+		var = self.pop()
 		
-		if isinstance(v, Variable):
-			if v.value is None:
-				print("%s is not initialized" % v.name)
+		if isinstance(var, Variable):
+			if var.value is None:
+				print("%s is not initialized" % var.name)
 				sys.exit()
-			vv = v.value
+			value = var.value
 		else:
-			vv = v
+			value = var
 		op = node.op
-		
-		print(op, vv)
 		
 		post = op[0] == "p"
 		op = op[-2:]
-		if op == "++":		self.push(vv.increment())
-		elif op == "--":	self.push(vv.decrement())
-		elif op == "+":		self.push(+vv)
-		elif op == "-":		self.push(-vv)
-		elif op == "&":		self.push(v.addressof())
-		elif op == "*":		self.push(v.indirection())
-		elif op == "~":		self.push(~v)
-		elif op == "!":		self.push(not v)
+		nv = None
+		if op == "++":
+			value.increment()
+			self.log(node, var, value.value)
+		elif op == "--":
+			value.decrement()
+			self.log(node, var, value.value)
+		elif op == "+":		nv = +vv
+		elif op == "-":		nv = -vv
+		elif op == "&":		nv = v.addressof()
+		elif op == "*":		nv = v.indirection()
+		elif op == "~":		nv = ~v
+		elif op == "!":		nv = not v
 		else:
 			a = 0
+		self.push(nv)
 			
 	def visit_BinaryOp(self, node):
 		self.visit(node.left)
@@ -420,7 +449,8 @@ else:
 if not entry in v.v.vars:
 	print("entry func %s not found" % entry)
 	sys.exit()
-v.v.push(Value("int", 99));
-v.v.push(Value("int", 50));
+for i in range(3,len(sys.argv)):
+	v.v.push(Value("int", int(sys.argv[i])));
 v.v.visit(v.v.vars[entry][0])
 
+print v.v.records

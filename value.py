@@ -93,9 +93,16 @@ class Value:
 	
 
 class Variable:
-	def __init__(self, name, value = None):
+	def __init__(self, name, coord, value = None):
 		self.name = name
+		self.coord = coord
 		self.value = value
 	def __repr__(self):
 		return "%s %s" % (self.name, self.value)
+		
+	def __hash__(self):
+		return self.coord.__hash__()
+		
+	def __eq__(self, rhs):
+		return self.coord.__eq__(other)
 
