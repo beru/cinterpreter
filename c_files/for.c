@@ -1,8 +1,13 @@
 
 #include <stdio.h>
 
-int g_a;
-int g_b;
+int g_a = 0;
+int g_b = 0;
+
+void test()
+{
+	hoge2(1);
+}
 
 int hoge2(int arg0)
 {

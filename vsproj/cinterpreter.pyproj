@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{3a10280b-903c-413f-a856-f033ba18d968}</ProjectGuid>
+    <ProjectHome>..\</ProjectHome>
+    <StartupFile>gui.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
+    <InterpreterVersion>2.7</InterpreterVersion>
+    <PtvsTargetsFile>$(VSToolsPath)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
+    <IsWindowsApplication>True</IsWindowsApplication>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+    <VSToolsPath Condition=" '$(VSToolsPath)' == '' ">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="pycparser\pycparser.egg-info\dependency_links.txt" />
+    <Content Include="pycparser\pycparser.egg-info\SOURCES.txt" />
+    <Content Include="pycparser\pycparser.egg-info\top_level.txt" />
+    <Content Include="pycparser\tests\README.txt" />
+    <Content Include="pycparser\TODO.txt" />
+    <Content Include="pycparser\tox.ini" />
+    <Content Include="todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="dump.py" />
+    <Compile Include="gui.py" />
+    <Compile Include="interpreter.py" />
+    <Compile Include="lextab.py" />
+    <Compile Include="main.py" />
+    <Compile Include="pycparser\build\lib\pycparser\ast_transforms.py" />
+    <Compile Include="pycparser\build\lib\pycparser\c_ast.py" />
+    <Compile Include="pycparser\build\lib\pycparser\c_generator.py" />
+    <Compile Include="pycparser\build\lib\pycparser\c_lexer.py" />
+    <Compile Include="pycparser\build\lib\pycparser\c_parser.py" />
+    <Compile Include="pycparser\build\lib\pycparser\plyparser.py" />
+    <Compile Include="pycparser\build\lib\pycparser\ply\cpp.py" />
+    <Compile Include="pycparser\build\lib\pycparser\ply\ctokens.py" />
+    <Compile Include="pycparser\build\lib\pycparser\ply\lex.py" />
+    <Compile Include="pycparser\build\lib\pycparser\ply\yacc.py" />
+    <Compile Include="pycparser\build\lib\pycparser\ply\__init__.py" />
+    <Compile Include="pycparser\build\lib\pycparser\_ast_gen.py" />
+    <Compile Include="pycparser\build\lib\pycparser\_build_tables.py" />
+    <Compile Include="pycparser\build\lib\pycparser\__init__.py" />
+    <Compile Include="pycparser\examples\c-to-c.py" />
+    <Compile Include="pycparser\examples\cdecl.py" />
+    <Compile Include="pycparser\examples\explore_ast.py" />
+    <Compile Include="pycparser\examples\func_calls.py" />
+    <Compile Include="pycparser\examples\func_defs.py" />
+    <Compile Include="pycparser\examples\using_cpp_libc.py" />
+    <Compile Include="pycparser\pycparser\ast_transforms.py" />
+    <Compile Include="pycparser\pycparser\c_ast.py" />
+    <Compile Include="pycparser\pycparser\c_generator.py" />
+    <Compile Include="pycparser\pycparser\c_lexer.py" />
+    <Compile Include="pycparser\pycparser\c_parser.py" />
+    <Compile Include="pycparser\pycparser\plyparser.py" />
+    <Compile Include="pycparser\pycparser\ply\cpp.py" />
+    <Compile Include="pycparser\pycparser\ply\ctokens.py" />
+    <Compile Include="pycparser\pycparser\ply\lex.py" />
+    <Compile Include="pycparser\pycparser\ply\yacc.py" />
+    <Compile Include="pycparser\pycparser\ply\__init__.py" />
+    <Compile Include="pycparser\pycparser\_ast_gen.py" />
+    <Compile Include="pycparser\pycparser\_build_tables.py" />
+    <Compile Include="pycparser\pycparser\__init__.py" />
+    <Compile Include="pycparser\setup.py" />
+    <Compile Include="pycparser\tests\all_tests.py" />
+    <Compile Include="pycparser\tests\test_c_ast.py" />
+    <Compile Include="pycparser\tests\test_c_generator.py" />
+    <Compile Include="pycparser\tests\test_c_lexer.py" />
+    <Compile Include="pycparser\tests\test_c_parser.py" />
+    <Compile Include="pycparser\tests\test_general.py" />
+    <Compile Include="pycparser\utils\internal\fake_includes.py" />
+    <Compile Include="pycparser\utils\internal\make_fake_typedefs.py" />
+    <Compile Include="pycparser\utils\internal\zz_parse.py" />
+    <Compile Include="pycparser\z.py" />
+    <Compile Include="pycparser\_clean_tables.py" />
+    <Compile Include="runner.py" />
+    <Compile Include="value.py" />
+    <Compile Include="yacctab.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="pycparser" />
+    <Folder Include="pycparser\build\" />
+    <Folder Include="pycparser\build\lib\" />
+    <Folder Include="pycparser\build\lib\pycparser" />
+    <Folder Include="pycparser\build\lib\pycparser\ply" />
+    <Folder Include="pycparser\examples" />
+    <Folder Include="pycparser\pycparser" />
+    <Folder Include="pycparser\pycparser.egg-info" />
+    <Folder Include="pycparser\pycparser\ply" />
+    <Folder Include="pycparser\tests" />
+    <Folder Include="pycparser\utils\" />
+    <Folder Include="pycparser\utils\internal" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\2.7" />
+  </ItemGroup>
+  <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
+</Project>
