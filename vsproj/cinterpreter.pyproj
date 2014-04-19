@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3a10280b-903c-413f-a856-f033ba18d968}</ProjectGuid>
     <ProjectHome>..\</ProjectHome>
-    <StartupFile>gui.py</StartupFile>
+    <StartupFile>gui.pyw</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -33,7 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="dump.py" />
-    <Compile Include="gui.py" />
+    <Compile Include="gui.pyw" />
     <Compile Include="interpreter.py" />
     <Compile Include="lextab.py" />
     <Compile Include="main.py" />

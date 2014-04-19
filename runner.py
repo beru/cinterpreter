@@ -3,12 +3,12 @@ from interpreter import *
 
 class CInterpreterRunner(object):
 	
-	def Load(self, filepath):
+	def Load(self, filepath, cpp_path=r'./pycparser/utils/cpp.exe', cpp_args=r'-I./pycparser/utils/fake_libc_include'):
 		self.ast = parse_file(
 			filepath,
 			use_cpp=True,
-			cpp_path=r'./pycparser/utils/cpp.exe',
-			cpp_args=r'-I./pycparser/utils/fake_libc_include'
+			cpp_path=cpp_path,
+			cpp_args=cpp_args
 			)
 		
 		# setup root
