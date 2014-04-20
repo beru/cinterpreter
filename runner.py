@@ -24,3 +24,4 @@ class CInterpreterRunner(object):
 	def CallFunction(self, name, args):
 		self.rootVisitor.callFunction(name, args)
 		return self.rootVisitor.v.records
+

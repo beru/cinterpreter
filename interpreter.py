@@ -2,15 +2,16 @@ from __future__ import division
 
 import sys
 import copy
+from ctypes import *
+from collections import OrderedDict
+
 from dump import *
+from variable import *
 
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py
 #
 sys.path.extend(['.', 'pycparser'])
-
-from collections import OrderedDict
-from value import *
 
 from pycparser import parse_file
 from pycparser.c_ast import *
@@ -28,6 +29,9 @@ class Interpreter(NodeVisitor):
 		self.break_flag = False
 		self.continue_flag = False
 		self.return_flag = False
+		
+		self.structs = {}
+		self.unnamed_struct_counter = 0
 		
 		self.records = OrderedDict()
 	
@@ -68,7 +72,7 @@ class Interpreter(NodeVisitor):
 			self.visit(node)
 			
 	def ope(self, lhs, op, rhs):
-		print(lhs, op, rhs)
+#		print(lhs, op, rhs)
 		
 		if lhs is None:
 			print("lhs None")
@@ -99,6 +103,8 @@ class Interpreter(NodeVisitor):
 		elif op == ">=":	ret = lhs >= rhs
 		else:
 			print "op %s not supported" % op
+			
+#		print ret
 		return ret
 		
 	def visit(self, node):
@@ -130,8 +136,7 @@ class Interpreter(NodeVisitor):
 					print("None")
 					sys.exit()
 				r = arg_values.pop()
-				rv = r.value if isinstance(r, Variable) else r
-				l.value = rv
+				l.value = r.value
 		
 		self.visit(node.body)
 		return
@@ -153,31 +158,35 @@ class Interpreter(NodeVisitor):
 				break
 		local_vars = self.vars_stack.pop()
 		for name in local_vars:
-			print("%s pop" % name)
 			self.vars[name].pop()
 		self.compound_depth -= 1
 	
 	def visit_Decl(self, node):
-		node.show()
-	
-		type = node.type
-		name = node.name #type.declname
-#		typeName = type.type.names[0]
-		self.eval(node.init)
+#		node.show()
+#		var_dump(node)
+		name = node.name
+		
+		if type(node.type) == FuncDecl:
+			return
+		
+		ctype = self.decl_to_ctype_type(node.type)
+		if name == None:
+			return
 		if name not in self.vars:
 			self.vars[name] = []
-		var = self.pop()
-		var = var.value if isinstance(var, Variable) else var
-		var = Variable(name, node.coord, var)
-		if var.value is not None:
+		var = Variable(name, node.coord, ctype, None)
+		if node.init != None:
+			self.eval(node.init)
+			var.assign(self.pop())
 			self.log(node, var, var.value.value)
-		print("%s push" % name)
+#		print("%s push" % name)
 		self.vars[name].append(var)
 		self.vars_stack[-1].append(name)
 		
 	def visit_Constant(self, node):
 #		node.show()
-		v = Value(node.type, int(node.value))
+		# TODO: support many types of literals
+		v = Variable(None, None, c_int, c_int(int(node.value)))
 		self.push(v)
 	
 	def visit_ID(self, node):
@@ -208,37 +217,30 @@ class Interpreter(NodeVisitor):
 
 		r = self.pop()
 		l = self.pop()
-		print("assign", l, node.op, r)
-		rv = r.value if isinstance(r, Variable) else r
-		if node.op != "=":
-			lv = l.value if isinstance(l, Variable) else l
+		if node.op == "=":
+			l.assign(r)
+		else:
 			op = node.op[:-1] # remove tail =
-			rv = self.ope(lv, op, rv)
-		l.value = rv
-		self.log(node, l, rv.value)
+			l.assign(self.ope(l, op, r))
+		self.log(node, l, r.value)
 	
 	def visit_UnaryOp(self, node):
 		self.visit(node.expr)
 		var = self.pop()
-		
-		if isinstance(var, Variable):
-			if var.value is None:
-				print("%s is not initialized" % var.name)
-				sys.exit()
-			value = var.value
-		else:
-			value = var
+		if var.value is None:
+			print("%s is not initialized" % var.name)
+			sys.exit()
 		op = node.op
 		
 		post = op[0] == "p"
 		op = op[-2:]
 		nv = None
 		if op == "++":
-			value.increment()
-			self.log(node, var, value.value)
+			var.increment()
+			self.log(node, var, var.value)
 		elif op == "--":
-			value.decrement()
-			self.log(node, var, value.value)
+			var.decrement()
+			self.log(node, var, var.value)
 		elif op == "+":		nv = +vv
 		elif op == "-":		nv = -vv
 		elif op == "&":		nv = v.addressof()
@@ -254,34 +256,91 @@ class Interpreter(NodeVisitor):
 		self.visit(node.right)
 		r = self.pop()
 		l = self.pop()
-		lv = l.value if isinstance(l, Variable) else l
-		rv = r.value if isinstance(r, Variable) else r
-		result = self.ope(lv, node.op, rv)
+		result = self.ope(l, node.op, r)
 		self.push(result)
 	
 	def visit_TernaryOp(self, node):
 #		node.show()
 		self.visit(node.cond)
 		cond = self.pop()
-		if cond.value:
+		if cond:
 			self.visit(node.iftrue)
 		else:
 			self.visit(node.iffalse)
 	
 	def visit_Union(self, node):
 		# TODO: 
+#		var_dump(node)
 		return
 	
-	def visit_ArrayDecl(self, node):
-		# TODO: 
-		return
-	
-	def visit_PtrDecl(self, node):
-		# TODO: 
-		return
+	def decl_to_ctype_type(self, decl):
+		t = type(decl)
+		if t == Struct:
+			tag_name = decl.name
+			if tag_name is None:
+				tag_name = "<unnamed%d>" % self.unnamed_struct_counter
+				self.unnamed_struct_counter += 1
+			
+			if tag_name not in self.structs:
+				self.structs[tag_name] = type(tag_name, (Structure,), {})
+			st = self.structs[tag_name]
+			if decl.decls is not None:
+				st._fields_ = []
+				for decl in decl.decls:
+					st._fields_.append((decl.name, self.decl_to_ctype_type(decl.type)))
+			return st
+		elif t == ArrayDecl:
+			return self.decl_to_ctype_type(decl.type) * int(decl.dim.value)
+		elif t == PtrDecl:
+			return POINTER(self.decl_to_ctype_type(decl.type))
+		elif t == TypeDecl:
+			decl_type = type(decl.type)
+			if decl_type == IdentifierType:
+				names = decl.type.names
+				unsigned = "unsigned" in names
+				for name in names:
+					if 0:
+						pass
+					elif name == "char":
+						return c_ubyte if unsigned else c_char
+					elif name == "wchar_t":
+						return c_wchar
+					elif name == "short":
+						return c_ushort if unsigned else c_short
+					elif name == "int":
+						return c_uint if unsigned else c_int
+					elif name == "long":
+						cnt = names.count("long")
+						if cnt == 1:
+							return c_ulong if unsigned else c_long
+						elif cnt == 2:
+							return c_ulonglong if unsigned else c_longlong
+						else:
+							print "invalid long count %s" % ','.join(names)
+							sys.exit()
+					elif name == "_Bool":
+						return c_bool
+					elif name == "float":
+						return c_float
+					elif name == "double":
+						return c_double
+					else:
+						pass
+			else:
+				return self.decl_to_ctype_type(decl.type)
+			return c_int
+		else:
+			print "other type ", t
+			sys.exit()
 	
 	def visit_Struct(self, node):
+		
+#		sys.exit()
+		return
+	
+	def visit_Typedef(self, node):
 		# TODO: 
+#		var_dump(node)
 		return
 	
 	def visit_If(self, node):
@@ -296,7 +355,6 @@ class Interpreter(NodeVisitor):
 #		node.show()
 		self.visit(node.cond)
 		cond = self.pop()
-		cond = cond.value if isinstance(cond, Variable) else cond
 		matched = False
 		default = None
 		for item in node.stmt.block_items:
@@ -306,7 +364,7 @@ class Interpreter(NodeVisitor):
 			elif isinstance(item, Case):
 				self.visit(item.expr)
 				expr = self.pop()
-				if not matched and  not (cond == expr).value:
+				if not matched and not cond.equals(expr).value:
 					continue
 				matched = True
 				for stmt in item.stmts:
@@ -408,9 +466,9 @@ class Interpreter(NodeVisitor):
 		if not name in self.vars:
 			return False
 		for arg in args:
-			self.push(Value("int", int(arg)));
+			v = Variable(None, None, c_int, c_int(int(arg)))
+			self.push(v);
 		self.visit(self.vars[name][0])
-	
 
 class RootVisitor(NodeVisitor):
 	def __init__(self):
@@ -421,13 +479,8 @@ class RootVisitor(NodeVisitor):
 		return
 	
 	def visit_Typedef(self, node):
-		# TODO: register typedef
+		self.v.visit(node);
 		return
-#		node.show()
-	
-	def visit_Struct(self, node):
-		return
-#		node.show()
 	
 	def visit_FuncDef(self, node):
 #		print('%s at %s' % (node.decl.name, node.decl.coord))
@@ -438,5 +491,5 @@ class RootVisitor(NodeVisitor):
 		self.v.callFunction(name, args)
 		
 	def setVariable(self, name, value):
-		self.v.vars[name][0].value = Value("int", value)
+		self.v.vars[name][0].value = c_int(value)
 

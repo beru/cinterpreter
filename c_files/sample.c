@@ -10,7 +10,7 @@ int i = 1000;
 
 int func(int arg)
 {
-	int test;
+	short test;
 	test = 1 ? 2 : 1;
 	test = test + 2;
 	
@@ -101,6 +101,11 @@ int func(int arg)
 	S8 c = 1000;
 	
 	c = a;
+}
+
+void funcTest()
+{
+	func(i);
 }
 
 int main(int argc, char* argv[])
