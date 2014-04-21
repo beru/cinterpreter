@@ -111,7 +111,7 @@ class AppForm(wx.Frame):
 		
 		list = []
 		for key, value in result.items():
-			list.append("%s %d %d" % (key.name, value["min"], value["max"]))
+			list.append("%s %s %s" % (key.name, value["min"], value["max"]))
 		self.resultText.SetValue("\n".join(list))
 
 		pass

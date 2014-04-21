@@ -51,18 +51,18 @@ class Interpreter(NodeVisitor):
 		coord = node.coord
 		if not key in self.records:
 			self.records[key] = {
-				"min" : val,
-				"max" : val,
+				"min" : val.value,
+				"max" : val.value,
 				"min_coord" : coord,
 				"max_coord" : coord
 			}
 		else:
 			rec = self.records[key]
-			if val < rec["min"]:
-				rec["min"] = val
+			if val.value < rec["min"]:
+				rec["min"] = val.value
 				rec["min_coord"] = coord
-			elif val > rec["max"]:
-				rec["max"] = val
+			elif val.value > rec["max"]:
+				rec["max"] = val.value
 				rec["max_coord"] = coord
 	
 	def eval(self, node):
@@ -120,6 +120,7 @@ class Interpreter(NodeVisitor):
 		return
 	
 	def visit_FuncDef(self, node):
+#		node.show()
 		if node.decl.type.args != None:
 			params = node.decl.type.args.params
 			arg_values = []
@@ -136,7 +137,7 @@ class Interpreter(NodeVisitor):
 					print("None")
 					sys.exit()
 				r = arg_values.pop()
-				l.value = r.value
+				l.assign(r)
 		
 		self.visit(node.body)
 		return
@@ -177,8 +178,9 @@ class Interpreter(NodeVisitor):
 		var = Variable(name, node.coord, ctype, None)
 		if node.init != None:
 			self.eval(node.init)
-			var.assign(self.pop())
-			self.log(node, var, var.value.value)
+			init_value = self.pop()
+			var.assign(init_value)
+			self.log(node, var, var.value)
 #		print("%s push" % name)
 		self.vars[name].append(var)
 		self.vars_stack[-1].append(name)
@@ -217,6 +219,7 @@ class Interpreter(NodeVisitor):
 
 		r = self.pop()
 		l = self.pop()
+
 		if node.op == "=":
 			l.assign(r)
 		else:
@@ -455,9 +458,12 @@ class Interpreter(NodeVisitor):
 		return
 	
 	def visit_FuncCall(self, node):
-		node.show()
+#		node.show()
 		self.visit(node.name)
 		func = self.pop()
+		
+#		node.args.show()
+		
 		self.visit(node.args)
 		self.visit(func)
 	
@@ -491,5 +497,5 @@ class RootVisitor(NodeVisitor):
 		self.v.callFunction(name, args)
 		
 	def setVariable(self, name, value):
-		self.v.vars[name][0].value = c_int(value)
+		self.v.vars[name][0].assign(Variable(None, None, c_int, c_int(value)))
 
