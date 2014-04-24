@@ -176,6 +176,8 @@ class Interpreter(NodeVisitor):
 		if name not in self.vars:
 			self.vars[name] = []
 		var = Variable(name, node.coord, ctype, None)
+#		print var
+		
 		if node.init != None:
 			self.eval(node.init)
 			init_value = self.pop()
@@ -212,14 +214,28 @@ class Interpreter(NodeVisitor):
 		v.type = node.to_type.type.type.names[0]
 		self.push(v)
 		
-	def visit_Assignment(self, node):
+	def visit_ArrayRef(self, node):
 #		node.show()
+#		var_dump(node)
+		
+		self.visit_ID(node.name)
+		var = self.pop()
+		self.visit(node.subscript)
+		sub = self.pop()
+		
+		ref = lambda : var.value[sub.value.value]
+		
+		print ref, ref()
+		
+		self.push(var.value[sub.value.value])
+	
+	def visit_Assignment(self, node):
 		self.visit(node.lvalue)
 		self.visit(node.rvalue)
 
 		r = self.pop()
 		l = self.pop()
-
+		
 		if node.op == "=":
 			l.assign(r)
 		else:
