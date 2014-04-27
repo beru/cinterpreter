@@ -48,21 +48,25 @@ class Interpreter(NodeVisitor):
 	
 	def log(self, node, var, val):
 		key = var
+		try:
+			value = val.value
+		except:
+			return
 		coord = node.coord
 		if not key in self.records:
 			self.records[key] = {
-				"min" : val.value,
-				"max" : val.value,
+				"min" : value,
+				"max" : value,
 				"min_coord" : coord,
 				"max_coord" : coord
 			}
 		else:
 			rec = self.records[key]
-			if val.value < rec["min"]:
-				rec["min"] = val.value
+			if value < rec["min"]:
+				rec["min"] = value
 				rec["min_coord"] = coord
 			elif val.value > rec["max"]:
-				rec["max"] = val.value
+				rec["max"] = value
 				rec["max_coord"] = coord
 	
 	def eval(self, node):
@@ -225,23 +229,33 @@ class Interpreter(NodeVisitor):
 		
 		ref = lambda : var.value[sub.value.value]
 		
-		print ref, ref()
+#		print ref, ref()
 		
 		self.push(var.value[sub.value.value])
 	
 	def visit_Assignment(self, node):
-		self.visit(node.lvalue)
-		self.visit(node.rvalue)
-
-		r = self.pop()
-		l = self.pop()
 		
-		if node.op == "=":
-			l.assign(r)
+		self.visit(node.rvalue)
+		r = self.pop()
+		
+		if isinstance(node.lvalue, UnaryOp) and node.lvalue.op == "*":
+			self.visit(node.lvalue.expr)
+			l = self.pop()
+			if node.op == "=":
+				rv = r.value.value
+			else:
+				op = node.op[:-1] # remove tail =
+				rv = self.ope(l.indirection(), op, r).value.value
+			l.value.contents.value = rv
 		else:
-			op = node.op[:-1] # remove tail =
-			l.assign(self.ope(l, op, r))
-		self.log(node, l, r.value)
+			self.visit(node.lvalue)
+			l = self.pop()
+			if node.op == "=":
+				l.assign(r)
+			else:
+				op = node.op[:-1] # remove tail =
+				l.assign(self.ope(l, op, r))
+			self.log(node, l, r.value)
 	
 	def visit_UnaryOp(self, node):
 		self.visit(node.expr)
@@ -260,12 +274,12 @@ class Interpreter(NodeVisitor):
 		elif op == "--":
 			var.decrement()
 			self.log(node, var, var.value)
-		elif op == "+":		nv = +vv
-		elif op == "-":		nv = -vv
-		elif op == "&":		nv = v.addressof()
-		elif op == "*":		nv = v.indirection()
-		elif op == "~":		nv = ~v
-		elif op == "!":		nv = not v
+		elif op == "+":		nv = +var
+		elif op == "-":		nv = -var
+		elif op == "&":		nv = var.addressof()
+		elif op == "*":		nv = var.indirection()
+		elif op == "~":		nv = ~var
+		elif op == "!":		nv = not var
 		else:
 			a = 0
 		self.push(nv)

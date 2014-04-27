@@ -3,7 +3,7 @@ import sys
 import operator
 from ctypes import *
 
-class Variable:
+class Variable(object):
 	def __init__(self, name, coord, type, value):
 		self.name = name
 		self.coord = coord
@@ -54,8 +54,16 @@ class Variable:
 		return self.coord.__eq__(other)
 	
 	def assign(self, rhs):
-		self.value.value = rhs.value.value
-	
+		
+		try:
+			self.value.value = rhs.value.value
+		except AttributeError:
+			try:
+				self.value.contents = rhs.value.contents
+			except AttributeError:
+				self.value.contents = rhs.value
+				
+		
 	def __pos__(self):
 		return self.make(self.type, self.value)
 	
@@ -117,7 +125,8 @@ class Variable:
 		return self
 		
 	def addressof(self):
-		return
+		return Variable(None, None, POINTER(self.type), pointer(self.value))
 		
 	def indirection(self):
-		return
+		return self.make(type(self.value.contents), self.value.contents)
+	

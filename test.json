@@ -1,11 +1,11 @@
 {
-	"file" : "c_files/array.c",
-	"function" : "arrayTest",
+	"file" : "c_files/pointer.c",
+	"function" : "test",
 	"args" : [
 		
 	],
 	"vars" : {
-		"g_a" : [0, 1]
+		"g_a" : [0, 10]
 	}
 }
 
